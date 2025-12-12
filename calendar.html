@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskCalendar</title>
+<link rel="icon" type="image/png" href="12.png">
+<link href="https://fonts.googleapis.com/css2?family=Allura&display=swap" rel="stylesheet">
+<style>
+body {
+  margin: 0;
+  padding: 20px;
+  font-family: 'Allura', cursive;
+  background: #FAD7A0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  box-sizing: border-box;
+}
+
+h1 {
+  font-size: 3rem;
+  color: #F39C6B;
+  margin: 0 0 20px 0;
+  padding: 10px 30px;
+  border: 2px solid #F39C6B;
+  border-radius: 20px;
+  background-color: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+
+.top-image {
+  width: 160px;
+  margin-bottom: 20px;
+  filter: drop-shadow(0 4px 10px rgba(0,0,0,0.25));
+  border-radius: 20px;
+}
+
+.legend-box {
+  display: flex;
+  gap: 25px;
+  margin-bottom: 20px;
+  background: #FDEBD0;
+  padding: 15px 25px;
+  border-radius: 15px;
+  border: 2px solid #F39C6B;
+  font-size: 1.3rem;
+  box-shadow: 0 6px 15px rgba(0,0,0,0.15);
+}
+
+.legend-box div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: inline-block;
+  border: 2px solid #F39C6B;
+}
+
+.calendar-container {
+  width: 100%;
+  max-width: 900px;
+  overflow-x: auto;
+  border-radius: 20px;
+  background: #FDEBD0;
+  padding: 20px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+  margin-bottom: 20px;
+}
+
+table {
+  width: max-content;
+  border-collapse: collapse;
+  text-align: center;
+}
+
+th, td {
+  border: 2px solid #F39C6B;
+  padding: 15px;
+  min-width: 50px;
+  cursor: pointer;
+  transition: 0.3s;
+  border-radius: 8px;
+}
+
+th {
+  background-color: #F7A981;
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+td {
+  background-color: #FFF5E6;
+}
+
+.reset-btn {
+  padding: 12px 25px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 15px;
+  background-color: #EC7063;
+  color: white;
+  cursor: pointer;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+  transition: 0.3s;
+}
+
+.reset-btn:hover {
+  background-color: #e04848;
+}
+
+.custom-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.8);
+  background: #FDEBD0;
+  border: 4px solid #F39C6B;
+  border-radius: 20px;
+  padding: 30px 40px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  text-align: center;
+  font-size: 1.2rem;
+  z-index: 9999;
+  opacity: 0;
+  transition: 0.3s ease;
+}
+
+.custom-popup.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.popup-buttons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.popup-buttons button {
+  padding: 10px 20px;
+  border-radius: 12px;
+  border: 2px solid #F39C6B;
+  background-color: #F7A981;
+  color: white;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: 0.3s;
+}
+
+.popup-buttons button:hover {
+  background-color: #F39C6B;
+}
+
+.petal {
+  position: fixed;
+  top: -40px;
+  width: 22px;
+  height: 22px;
+  opacity: 0.9;
+  animation: fall linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes fall {
+  0% { transform: translateY(-40px) rotate(0deg); }
+  100% { transform: translateY(110vh) rotate(360deg); }
+}
+</style>
+</head>
+<body>
+<h1>Task Calendar</h1>
+<img src="i5.png" class="top-image">
+<div class="legend-box">
+  <div><span class="dot" style="background:#F7DC6F;"></span> Yellow</div>
+  <div><span class="dot" style="background:#85C1E9;"></span> Blue</div>
+  <div><span class="dot" style="background:#82E0AA;"></span> Green</div>
+  <div><span class="dot" style="background:#EC7063;"></span> Red</div>
+  <div><span class="dot" style="background:#BB8FCE;"></span> Purple</div>
+</div>
+<div class="calendar-container">
+  <table id="calendarTable"></table>
+</div>
+<button class="reset-btn" id="resetBtn">Reset All Tasks</button>
+<div id="customPopup" class="custom-popup">
+  <p>Are you sure you want to reset all tasks?</p>
+  <div class="popup-buttons">
+    <button id="yesBtn">Yes</button>
+    <button id="noBtn">No</button>
+  </div>
+</div>
+<script>
+const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+const daysInMonth = 31;
+
+if (savedTasks.length === 0) {
+  document.getElementById('calendarTable').innerHTML =
+    '<tr><td style="padding:20px;">No tasks found. Please go to Insert Tasks page!</td></tr>';
+} else {
+  const table = document.getElementById('calendarTable');
+
+  const headerRow = document.createElement('tr');
+  const firstTh = document.createElement('th');
+  firstTh.textContent = "Tasks";
+  headerRow.appendChild(firstTh);
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const th = document.createElement('th');
+    th.textContent = d;
+    headerRow.appendChild(th);
+  }
+  table.appendChild(headerRow);
+
+  let attendanceData = JSON.parse(localStorage.getItem('attendance')) ||
+    savedTasks.map(t => ({ name: t.name, color: t.color, attendance: Array(daysInMonth).fill(false) }));
+
+  attendanceData.forEach((task) => {
+    const tr = document.createElement('tr');
+    const taskTd = document.createElement('td');
+    taskTd.textContent = task.name;
+    taskTd.style.fontWeight = 'bold';
+    tr.appendChild(taskTd);
+
+    for (let day = 0; day < daysInMonth; day++) {
+      const td = document.createElement('td');
+      if (task.attendance[day]) td.style.backgroundColor = task.color;
+
+      td.addEventListener('click', () => {
+        if (td.style.backgroundColor === task.color) {
+          td.style.backgroundColor = '#FFF5E6';
+          task.attendance[day] = false;
+        } else {
+          td.style.backgroundColor = task.color;
+          task.attendance[day] = true;
+        }
+        localStorage.setItem('attendance', JSON.stringify(attendanceData));
+      });
+      tr.appendChild(td);
+    }
+    table.appendChild(tr);
+  });
+}
+
+const resetBtn = document.getElementById('resetBtn');
+const popup = document.getElementById('customPopup');
+const yesBtn = document.getElementById('yesBtn');
+const noBtn = document.getElementById('noBtn');
+resetBtn.addEventListener('click', () => popup.classList.add('show'));
+noBtn.addEventListener('click', () => popup.classList.remove('show'));
+yesBtn.addEventListener('click', () => {
+  localStorage.removeItem('tasks');
+  localStorage.removeItem('attendance');
+  window.location.href = 'insert.html';
+});
+function createPetal() {
+   const petal = document.createElement("img");
+  petal.src = "i4.svg";
+  petal.classList.add("petal");
+  petal.style.left = Math.random() * 100 + "vw";
+  const duration = Math.random() * 8 + 12;
+  petal.style.animationDuration = duration + "s";
+  document.body.appendChild(petal);
+  setTimeout(() => petal.remove(), duration * 1000);
+}
+setInterval(createPetal, 700);
+</script>
+</body>
+</html>

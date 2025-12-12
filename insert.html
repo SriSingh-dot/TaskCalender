@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TaskCalendar</title>
+
+<link rel="icon" type="image/png" href="12.png">
+<link href="https://fonts.googleapis.com/css2?family=Allura&display=swap" rel="stylesheet">
+<style>
+    body {
+    margin: 0;
+     padding: 20px;
+    background: #FAD7A0;
+    display: flex;
+    justify-content: center;
+     align-items: flex-start;
+    min-height: 100vh;
+    box-sizing: border-box;
+    overflow: hidden;
+    position: relative;
+    }
+    .container {
+    background: #FDEBD0;
+    padding: 20px;
+     border-radius: 25px;
+     width: 100%;
+    max-width: 500px;
+    box-sizing: border-box;
+    border: 6px solid #F39C6B;
+    box-shadow: 0 0 0 6px #FAD7A0 inset;
+    position: relative;
+    z-index: 1;
+    }
+
+    .content {
+    font-family: 'Allura', cursive;
+    background: linear-gradient(135deg, #FDEBD0, #D6EAF8);
+     border-radius: 20px;
+    padding: 30px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    position: relative;
+    z-index: 2;
+    }
+
+    h1 {
+    font-size: 3rem;
+    color: #F39C6B;
+     margin: 0;
+    padding: 10px 30px;
+    border: 2px solid #F39C6B;
+    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.8);
+     box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+    }
+
+    p {
+    margin-top: 10px;
+    font-size: 1rem;
+    color: #555;
+    }
+
+    form {
+    margin-top: 40px;
+     display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+    border-radius: 20px;
+    background-color: rgba(255, 255, 255, 0.7);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    }
+    input[type="text"] {
+    padding: 12px 15px;
+    border-radius: 10px;
+    border: 2px solid #F39C6B;
+     font-size: 1.1rem;
+    width: 100%;
+    box-sizing: border-box;
+    }
+    button {
+    margin-top: 20px;
+    padding: 12px 20px;
+    border: none;
+     border-radius: 15px;
+    background-color: #F39C6B;
+    color: white;
+     font-size: 1.2rem;
+    cursor: pointer;
+    transition: 0.3s;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    button:hover {
+    background-color: #e48b5a;
+    }
+    .popup {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background-color: #F39C6B;
+    color: white;
+    padding: 15px 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+    font-size: 1.2rem;
+    opacity: 0;
+    transform: translateY(-50px);
+    transition: 0.5s ease;
+    z-index: 1000;
+    }
+    .popup.show {
+    opacity: 1;
+    transform: translateY(0);
+    }
+    .petal {
+    position: fixed;
+    top: -40px;
+    width: 22px;
+    height: 22px;
+    opacity: 0.9;
+    animation: fall linear infinite;
+    pointer-events: none;
+    z-index: 0;
+    }
+
+    @keyframes fall {
+    0% {
+    transform: translateY(-40px) rotate(0deg);
+    }
+     100% {
+    transform: translateY(110vh) rotate(360deg);
+    }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+<div class="content">
+<h1>Insert Your Tasks</h1>
+<p>You can write up to 5 tasks in your journey. Choose wisely.</p>
+
+<form id="taskForm">
+<input type="text" placeholder="Task 1" name="task1">
+<input type="text" placeholder="Task 2" name="task2">
+<input type="text" placeholder="Task 3" name="task3">
+<input type="text" placeholder="Task 4" name="task4">
+<input type="text" placeholder="Task 5" name="task5">
+<button type="submit">Save Tasks</button>
+</form>
+</div>
+</div>
+<div id="popup" class="popup">Tasks Saved Successfully!</div>
+<script>
+const colors = ['#F7DC6F','#5DADE2','#58D68D','#EC7063','#AF7AC5'];
+const savedTasks = JSON.parse(localStorage.getItem('tasks')) || [];
+const daysInMonth = 31;
+for(let i=0;i<5;i++){
+const input = document.querySelector(`input[name=task${i+1}]`);
+if(savedTasks[i]){
+input.value = savedTasks[i].name;
+input.disabled = true;
+input.style.backgroundColor = savedTasks[i].color+'55';
+}
+}
+document.getElementById('taskForm').addEventListener('submit',function(e){
+e.preventDefault();
+let tasks = savedTasks.slice();
+
+for(let i=1;i<=5;i++){
+const input = document.querySelector(`input[name=task${i}]`);
+if(!input.disabled){
+const name = input.value.trim();
+if(name){
+tasks[i-1]={name:name,color:colors[i-1]};
+input.disabled=true;
+input.style.backgroundColor=colors[i-1]+'55';
+}
+}
+}
+if(tasks.length===0){
+showPopup('Please enter at least one new task.','#EC7063');
+return;
+}
+localStorage.setItem('tasks',JSON.stringify(tasks));
+
+let attendanceData = JSON.parse(localStorage.getItem('attendance'))||[];
+tasks.forEach((t,i)=>{
+if(!attendanceData[i]){
+attendanceData[i]={name:t.name,color:t.color,attendance:Array(daysInMonth).fill(false)};
+}
+});
+localStorage.setItem('attendance',JSON.stringify(attendanceData));
+showPopup('Tasks Saved Successfully!','#58D68D');
+setTimeout(()=>{window.location.href='calendar.html';},1500);
+});
+function showPopup(msg,bg){
+const popup = document.getElementById('popup');
+popup.textContent=msg;
+popup.style.backgroundColor=bg;
+popup.classList.add('show');
+setTimeout(()=>popup.classList.remove('show'),2000);
+}
+function createPetal(){
+const petal=document.createElement("img");
+petal.src="i4.svg";
+petal.classList.add("petal");
+petal.style.left=Math.random()*100+"vw";
+const duration=Math.random()*8+12;
+petal.style.animationDuration=duration+"s";
+document.body.appendChild(petal);
+setTimeout(()=>petal.remove(),duration*1000);
+}
+setInterval(createPetal,700);
+</script>
+</body>
+</html>
